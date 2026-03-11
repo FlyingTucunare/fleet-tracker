@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Fleet Tracker — Roteamento por Rodovias</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #21262d;
+    --border2:  #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --orange:   #f97316;
+    --orange2:  #ea580c;
+    --green:    #3fb950;
+    --green-bg: #1a3a1a;
+    --green-br: #2ea043;
+    --blue:     #79b8ff;
+    --blue-bg:  #1f3a6e;
+    --red:      #ff7b7b;
+    --red-bg:   #3d1a1a;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(90deg, #0d1117, #161b22);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .header-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--orange), var(--orange2));
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 12px rgba(249,115,22,.35);
+  }
+  .header-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 21px; font-weight: 800;
+    letter-spacing: 1.5px; color: #f0f6fc;
+  }
+  .header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .badge-live {
+    margin-left: auto;
+    background: var(--green-bg);
+    border: 1px solid var(--green-br);
+    color: var(--green);
+    font-size: 11px; font-weight: 700;
+    padding: 3px 12px; border-radius: 20px;
+    letter-spacing: .5px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(46,160,67,.4); }
+    50%      { box-shadow: 0 0 0 5px rgba(46,160,67,0); }
+  }
+
+  /* LAYOUT */
+  .main { display:flex; flex:1; overflow:hidden; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 278px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow-y: auto; flex-shrink: 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sec { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .sec-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 2px; color: var(--muted);
+    text-transform: uppercase; margin-bottom: 10px;
+  }
+
+  /* vehicle card */
+  .vcard {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px; padding: 12px;
+  }
+  .vplate {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px; font-weight: 800;
+    color: #f0f6fc; letter-spacing: 2.5px;
+  }
+  .vdriver { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .vstatus {
+    display: inline-block; margin-top: 7px;
+    font-size: 11px; font-weight: 600;
+    color: var(--green); background: var(--green-bg);
+    border: 1px solid var(--green-br);
+    padding: 2px 9px; border-radius: 20px;
+  }
+
+  /* loading indicator */
+  .loading-bar {
+    height: 3px;
+    background: var(--border2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .loading-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--orange2), var(--orange), #fb923c);
+    border-radius: 2px;
+    transition: width .4s ease;
+  }
+  .loading-text { font-size: 11px; color: var(--muted); margin-top: 5px; text-align:center; }
+
+  /* progress */
+  .prog-header {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+  }
+  .prog-pct { color: var(--orange); font-weight: 700; font-size: 13px; }
+  .prog-bar { height: 7px; background: var(--border2); border-radius: 4px; overflow: hidden; }
+  .prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--orange2), var(--orange), #fb923c);
+    border-radius: 4px;
+    transition: width .8s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 0 8px rgba(249,115,22,.4);
+  }
+
+  /* stats */
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .stat {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 7px; padding: 10px 8px; text-align: center;
+  }
+  .stat-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 21px; font-weight: 700; color: #f0f6fc;
+  }
+  .stat-val.loading-val { color: var(--muted); font-size: 14px; }
+  .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: .3px; }
+
+  /* itinerário */
+  .stop-list { display: flex; flex-direction: column; }
+  .stop-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 8px 0; position: relative;
+  }
+  .stop-item:not(:last-child)::after {
+    content: '';
+    position: absolute; left: 11px; top: 28px;
+    width: 2px; height: calc(100% - 8px);
+    background: var(--border2);
+  }
+  .stop-dot {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0; z-index: 1;
+    font-family: 'Barlow Condensed', sans-serif;
+  }
+  .d-origem  { background: #1f6feb; color: #fff; }
+  .d-ok      { background: var(--green-br); color: #fff; }
+  .d-pend    { background: var(--border2); color: var(--muted); border: 2px dashed #484f58; }
+  .d-dest    { background: #da3633; color: #fff; }
+  .stop-info { flex: 1; }
+  .stop-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .stop-time { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .sbadge {
+    display: inline-block; margin-top: 3px;
+    font-size: 10px; font-weight: 600;
+    padding: 1px 7px; border-radius: 10px;
+  }
+  .sb-ok   { background: var(--green-bg); color: var(--green); }
+  .sb-pend { background: var(--border); color: var(--muted); }
+  .sb-next { background: #2a1f00; color: var(--orange); border: 1px solid var(--orange); }
+
+  /* distâncias da rota */
+  .route-info { font-size: 12px; color: var(--muted); }
+  .route-info span { color: var(--text); font-weight: 500; }
+
+  /* MAP */
+  #map { flex: 1; background: var(--bg); }
+
+  /* Popup */
+  .leaflet-popup-content-wrapper {
+    background: var(--surface) !important;
+    border: 1px solid var(--border2) !important;
+    border-radius: 9px !important;
+    box-shadow: 0 8px 28px rgba(0,0,0,.65) !important;
+    color: var(--text) !important;
+  }
+  .leaflet-popup-tip { background: var(--surface) !important; }
+  .leaflet-popup-content { margin: 13px 15px !important; font-family: 'Barlow', sans-serif; }
+  .pt { font-family:'Barlow Condensed',sans-serif; font-size:15px; font-weight:700; color:#f0f6fc; margin-bottom:3px; }
+  .ps { font-size:12px; color:var(--muted); }
+  .ptag {
+    display:inline-block; margin-top:6px;
+    font-size:11px; font-weight:600;
+    padding:2px 9px; border-radius:10px;
+  }
+  .tg-o { background:var(--blue-bg);  color:var(--blue); }
+  .tg-p { background:var(--green-bg); color:var(--green); }
+  .tg-d { background:var(--red-bg);   color:var(--red); }
+  .tg-v { background:#2a1f00; color:var(--orange); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🚛</div>
+  <div>
+    <div class="header-title">FLEET TRACKER</div>
+    <div class="header-sub">Roteamento por rodovias · OpenStreetMap + OSRM</div>
+  </div>
+  <div class="badge-live">● AO VIVO</div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+
+    <div class="sec">
+      <div class="sec-label">Veículo</div>
+      <div class="vcard">
+        <div class="vplate">ABC-1D23</div>
+        <div class="vdriver">👤 Carlos Mendes</div>
+        <div class="vstatus">● Em trânsito</div>
+        <div class="loading-bar"><div class="loading-fill" id="loadBar"></div></div>
+        <div class="loading-text" id="loadText">Calculando rota pelas rodovias…</div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Progresso da Viagem</div>
+      <div class="prog-header">
+        <span>SP → Ribeirão Preto</span>
+        <span class="prog-pct" id="pct">—</span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Resumo</div>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-val" id="statETA">…</div>
+          <div class="stat-lbl">ETA Chegada</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statRest">…</div>
+          <div class="stat-lbl">Tempo Restante</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val">3/5</div>
+          <div class="stat-lbl">Paradas</div>
+        </div>
+        <div class="stat">
+          <div class="stat-val" id="statDist">…</div>
+          <div class="stat-lbl">Dist. Total</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-label">Itinerário</div>
+      <div class="stop-list">
+        <div class="stop-item">
+          <div class="stop-dot d-origem">O</div>
+          <div class="stop-info">
+            <div class="stop-name">São Paulo (SP)</div>
+            <div class="stop-time">Saída: 08:00</div>
+            <span class="sbadge sb-ok">✓ Concluído</span>
+          </div>
+        </div>
+        <div class="stop-item">
+          <div class="stop-dot d-ok">1</div>
+          <div class="stop-info">
+            <div class="stop-name">Campinas</div>
+            <div class="stop-time">Chegada: 09:30</div>
+            <span class="sbadge sb-ok">✓ Concluído</span>
+          </div>
+        </div>
+        <div class="stop-item">
+          <div class="stop-dot d-ok">2</div>
+          <div class="stop-info">
+            <div class="stop-name">Limeira</div>
+            <div class="stop-time">Chegada: 10:20</div>
+            <span class="sbadge sb-ok">✓ Concluído</span>
+          </div>
+        </div>
+        <div class="stop-item">
+          <div class="stop-dot d-pend">3</div>
+          <div class="stop-info">
+            <div class="stop-name">São Carlos</div>
+            <div class="stop-time">Previsão: 12:15</div>
+            <span class="sbadge sb-next">▶ Próxima parada</span>
+          </div>
+        </div>
+        <div class="stop-item">
+          <div class="stop-dot d-dest">D</div>
+          <div class="stop-info">
+            <div class="stop-name">Ribeirão Preto</div>
+            <div class="stop-time">ETA: <span id="etaText">calculando…</span></div>
+            <span class="sbadge sb-pend">Pendente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <div id="map"></div>
+</div>
+
+<script>
+// ── DADOS ──────────────────────────────────────────────────────
+const paradas = [
+  { nome:"São Paulo",      lat:-23.5505, lng:-46.6333, tipo:"origem",  hora:"08:00", ok:true  },
+  { nome:"Campinas",       lat:-22.9056, lng:-47.0608, tipo:"parada",  hora:"09:30", ok:true  },
+  { nome:"Limeira",        lat:-22.5638, lng:-47.4012, tipo:"parada",  hora:"10:20", ok:true  },
+  { nome:"São Carlos",     lat:-22.0154, lng:-47.8910, tipo:"parada",  hora:"12:15", ok:false },
+  { nome:"Ribeirão Preto", lat:-21.1767, lng:-47.8208, tipo:"destino", hora:"14:30", ok:false },
+];
+
+const veiculo = {
+  lat: -22.3100, lng: -47.6500,
+  placa: "ABC-1D23", motorista: "Carlos Mendes", velocidade: "87 km/h"
+};
+
+// ── MAPA ───────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl:true })
+              .setView([-22.5, -47.2], 8);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution:'© OpenStreetMap © CARTO',
+  subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+// ── ÍCONES ─────────────────────────────────────────────────────
+function mkIcon(bg, txt, sz=28) {
+  return L.divIcon({
+    html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;
+      background:${bg};border:3px solid #fff;
+      display:flex;align-items:center;justify-content:center;
+      font-size:${sz*.38}px;font-weight:800;color:#fff;
+      font-family:'Barlow Condensed',sans-serif;
+      box-shadow:0 2px 10px rgba(0,0,0,.55);">${txt}</div>`,
+    className:'', iconSize:[sz,sz],
+    iconAnchor:[sz/2,sz/2], popupAnchor:[0,-(sz/2+5)]
+  });
+}
+function mkTruck() {
+  return L.divIcon({
+    html:`<div style="width:42px;height:42px;border-radius:50%;
+      background:#f97316;border:3px solid #fff;
+      display:flex;align-items:center;justify-content:center;font-size:20px;
+      box-shadow:0 0 0 7px rgba(249,115,22,.22),0 2px 14px rgba(0,0,0,.6);">🚛</div>`,
+    className:'', iconSize:[42,42],
+    iconAnchor:[21,21], popupAnchor:[0,-25]
+  });
+}
+
+// ── MARCADORES ─────────────────────────────────────────────────
+const corTipo = { origem:'#1f6feb', destino:'#da3633' };
+const lblTipo = { origem:'O', destino:'D' };
+const tagCls  = { origem:'tg-o', parada:'tg-p', destino:'tg-d' };
+const tagNome = { origem:'Origem', parada:'Parada', destino:'Destino' };
+
+paradas.forEach((p, i) => {
+  const cor = p.ok ? (corTipo[p.tipo]||'#2ea043')
+                   : (p.tipo==='destino' ? '#da3633' : '#484f58');
+  const lbl = lblTipo[p.tipo] || String(i);
+  L.marker([p.lat, p.lng], { icon: mkIcon(cor, lbl) })
+   .addTo(map)
+   .bindPopup(`<div class="pt">${p.nome}</div>
+     <div class="ps">${p.tipo==='origem'?'Saída':'Chegada'}: ${p.hora}</div>
+     <span class="ptag ${tagCls[p.tipo]}">${tagNome[p.tipo]}</span>`);
+});
+
+// Veículo
+L.marker([veiculo.lat, veiculo.lng], { icon: mkTruck(), zIndexOffset:1000 })
+ .addTo(map)
+ .bindPopup(`<div class="pt">🚛 ${veiculo.placa}</div>
+   <div class="ps">Motorista: ${veiculo.motorista}</div>
+   <div class="ps">Velocidade: ${veiculo.velocidade}</div>
+   <span class="ptag tg-v">Posição Atual</span>`)
+ .openPopup();
+
+// fit inicial
+const allCoords = paradas.map(p=>[p.lat,p.lng]).concat([[veiculo.lat,veiculo.lng]]);
+map.fitBounds(L.latLngBounds(allCoords).pad(0.12));
+
+// ── ROTEAMENTO VIA OSRM ────────────────────────────────────────
+// Monta sequência: origem → ... → posição atual → ... → destino
+// Insere o veículo entre a última parada concluída e a próxima
+const coords = paradas.map(p => `${p.lng},${p.lat}`);
+// Insere veículo entre índice 2 (Limeira, ok) e índice 3 (São Carlos)
+coords.splice(3, 0, `${veiculo.lng},${veiculo.lat}`);
+
+const osrmUrl =
+  `https://router.project-osrm.org/route/v1/driving/${coords.join(';')}` +
+  `?overview=full&geometries=geojson&steps=false`;
+
+// barra de loading animada
+let loadPct = 0;
+const loadInterval = setInterval(() => {
+  loadPct = Math.min(loadPct + 3, 85);
+  document.getElementById('loadBar').style.width = loadPct + '%';
+}, 120);
+
+fetch(osrmUrl)
+  .then(r => r.json())
+  .then(data => {
+    clearInterval(loadInterval);
+    document.getElementById('loadBar').style.width = '100%';
+    document.getElementById('loadText').textContent = '✓ Rota carregada pelas rodovias';
+    document.getElementById('loadText').style.color = '#3fb950';
+
+    if (!data.routes || !data.routes[0]) {
+      document.getElementById('loadText').textContent = '⚠ Não foi possível calcular a rota';
+      return;
+    }
+
+    const route     = data.routes[0];
+    const geometry  = route.geometry.coordinates; // [lng, lat]
+    const distTotal = (route.distance / 1000).toFixed(0); // km
+    const durTotal  = route.duration; // segundos
+
+    // Descobre o índice do waypoint do veículo na rota
+    // legs: 0=SP→Camp, 1=Camp→Lim, 2=Lim→Veic, 3=Veic→SCarlos, 4=SCarlos→Rib
+    // trecho percorrido = legs 0+1+2, restante = legs 3+4
+    let percorridoCoords = [];
+    let restanteCoords   = [];
+
+    // Reconstrói a geometria por leg acumulando pontos
+    // A geometry é a rota completa — vamos separar pelo ponto do veículo
+    // Encontra o ponto mais próximo na geometry ao veículo
+    const veicPoint = [veiculo.lng, veiculo.lat];
+    let minDist = Infinity, splitIdx = 0;
+    geometry.forEach(([lng, lat], idx) => {
+      const d = Math.hypot(lng - veicPoint[0], lat - veicPoint[1]);
+      if (d < minDist) { minDist = d; splitIdx = idx; }
+    });
+
+    percorridoCoords = geometry.slice(0, splitIdx + 1).map(([lng, lat]) => [lat, lng]);
+    restanteCoords   = geometry.slice(splitIdx).map(([lng, lat]) => [lat, lng]);
+
+    // Desenha as linhas
+    L.polyline(percorridoCoords, {
+      color:'#f97316', weight:5, opacity:.95,
+      lineCap:'round', lineJoin:'round'
+    }).addTo(map);
+
+    L.polyline(restanteCoords, {
+      color:'#484f58', weight:5, opacity:.8,
+      dashArray:'10 8', lineCap:'round', lineJoin:'round'
+    }).addTo(map);
+
+    // Calcula progresso aproximado (trecho percorrido / total)
+    function polylineLength(pts) {
+      let d = 0;
+      for (let i=1;i<pts.length;i++) {
+        const dlat = pts[i][0]-pts[i-1][0], dlng = pts[i][1]-pts[i-1][1];
+        d += Math.sqrt(dlat*dlat + dlng*dlng);
+      }
+      return d;
+    }
+    const lenPerc = polylineLength(percorridoCoords);
+    const lenRest = polylineLength(restanteCoords);
+    const pct = Math.round(lenPerc / (lenPerc + lenRest) * 100);
+
+    // Duração restante
+    const durRestante = Math.round(durTotal * (1 - pct/100));
+    const hRest = Math.floor(durRestante/3600);
+    const mRest = Math.floor((durRestante%3600)/60);
+
+    // ETA
+    const now = new Date();
+    const eta = new Date(now.getTime() + durRestante*1000);
+    const etaStr = eta.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+    // Atualiza sidebar
+    document.getElementById('pct').textContent       = pct + '%';
+    document.getElementById('progFill').style.width  = pct + '%';
+    document.getElementById('statETA').textContent   = etaStr;
+    document.getElementById('statRest').textContent  = `${hRest}h${mRest.toString().padStart(2,'0')}`;
+    document.getElementById('statDist').textContent  = distTotal + ' km';
+    document.getElementById('etaText').textContent   = etaStr;
+
+    // Refit com a rota real
+    map.fitBounds(L.latLngBounds(
+      geometry.map(([lng,lat]) => [lat,lng])
+    ).pad(0.08));
+  })
+  .catch(() => {
+    clearInterval(loadInterval);
+    document.getElementById('loadText').textContent = '⚠ Sem conexão com OSRM — exibindo rota em linha reta';
+    document.getElementById('loadText').style.color = '#f97316';
+    // fallback: linha reta
+    const allPts = paradas.map(p=>[p.lat,p.lng]);
+    const vIdx = 3;
+    L.polyline([...allPts.slice(0,vIdx), [veiculo.lat,veiculo.lng]],
+      {color:'#f97316',weight:4}).addTo(map);
+    L.polyline([[veiculo.lat,veiculo.lng],...allPts.slice(vIdx)],
+      {color:'#484f58',weight:4,dashArray:'8 8'}).addTo(map);
+    document.getElementById('pct').textContent      = '60%';
+    document.getElementById('progFill').style.width = '60%';
+    document.getElementById('statETA').textContent  = '14:30';
+    document.getElementById('statRest').textContent = '~2h';
+    document.getElementById('statDist').textContent = '~312 km';
+    document.getElementById('etaText').textContent  = '14:30';
+    document.getElementById('loadBar').style.width  = '100%';
+  });
+</script>
+</body>
+</html>
