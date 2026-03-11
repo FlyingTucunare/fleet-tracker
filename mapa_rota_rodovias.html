@@ -158,11 +158,13 @@ let veiculos = [];
 try {
   const raw = p.get('v') || '';
   if (raw) {
-    veiculos = raw.split('_').map(item => {
-      const parts = item.split('~');
-      const lat = parseFloat(parts[1].replace('n','-'));
-      const lng = parseFloat(parts[2].replace('n','-'));
-      return { placa: parts[0], lat, lng };
+    veiculos = raw.split('Z').map(item => {
+      const parts = item.split('X');
+      return {
+        placa: parts[0],
+        lat:   parseFloat(parts[1].replace('n','-')),
+        lng:   parseFloat(parts[2].replace('n','-'))
+      };
     }).filter(v => v.placa && !isNaN(v.lat) && !isNaN(v.lng));
   }
 } catch(e) { veiculos = []; }
