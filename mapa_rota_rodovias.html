@@ -8,301 +8,334 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
-:root{--bg:#0d1117;--surface:#161b22;--border:#21262d;--border2:#30363d;--text:#e6edf3;--muted:#8b949e;--orange:#f97316;--orange2:#ea580c;--green:#3fb950;--green-bg:#1a3a1a;--green-br:#2ea043;--blue:#79b8ff;--blue-bg:#1f3a6e;--red:#ff7b7b;--red-bg:#3d1a1a;}
+:root{
+  --bg:#f8f9fa;--surface:#ffffff;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#1e293b;--muted:#64748b;--orange:#ea580c;--orange2:#c2410c;
+  --orange-bg:#fff7ed;--orange-br:#fed7aa;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-br:#86efac;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-br:#93c5fd;
+  --red:#dc2626;--red-bg:#fef2f2;--red-br:#fca5a5;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+}
 *{box-sizing:border-box;margin:0;padding:0;}
 html{height:100%;}
 body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100%;overflow:hidden;}
-.header{background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.hicon{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 10px rgba(249,115,22,.3);}
-.htitle{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:1.5px;color:#f0f6fc;}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:var(--shadow);}
+.hicon{width:32px;height:32px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 8px rgba(234,88,12,.3);}
+.htitle{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;letter-spacing:1px;color:var(--text);}
 .hsub{font-size:10px;color:var(--muted);margin-top:1px;}
 .blive{margin-left:auto;background:var(--green-bg);border:1px solid var(--green-br);color:var(--green);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,160,67,.4);}50%{box-shadow:0 0 0 5px rgba(46,160,67,0);}}
+.bfrota{margin-left:auto;background:var(--blue-bg);border:1px solid var(--blue-br);color:var(--blue);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.3);}50%{box-shadow:0 0 0 5px rgba(22,163,74,0);}}
+
+/* LAYOUT */
 .main{display:flex;flex:1;overflow:hidden;min-height:0;height:0;}
-.sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
-.sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
+
+/* SIDEBAR */
+.sidebar{width:255px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;box-shadow:var(--shadow);}
+.sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
 .sec{padding:12px 14px;border-bottom:1px solid var(--border);}
 .slabel{font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;}
-.vcard{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px;}
-.vplate{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;color:#f0f6fc;letter-spacing:2px;}
+
+/* VCARD */
+.vcard{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px;box-shadow:var(--shadow);}
+.vplate{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:800;color:var(--text);letter-spacing:2px;}
 .vdriver{font-size:11px;color:var(--muted);margin-top:3px;}
 .vstatus{display:inline-block;margin-top:6px;font-size:10px;font-weight:600;color:var(--green);background:var(--green-bg);border:1px solid var(--green-br);padding:2px 8px;border-radius:20px;}
-.lbar{height:3px;background:var(--border2);border-radius:2px;overflow:hidden;margin-top:7px;}
+.lbar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:7px;}
 .lfill{height:100%;width:0%;background:linear-gradient(90deg,var(--orange2),var(--orange));border-radius:2px;transition:width .4s;}
 .ltxt{font-size:10px;color:var(--muted);margin-top:4px;text-align:center;}
+
+/* PROGRESSO */
 .ph{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px;}
-.ppct{color:var(--orange);font-weight:700;font-size:12px;}
-.pbar{height:6px;background:var(--border2);border-radius:3px;overflow:hidden;}
-.pfill{height:100%;background:linear-gradient(90deg,var(--orange2),var(--orange),#fb923c);border-radius:3px;transition:width .8s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(249,115,22,.4);}
+.ppct{color:var(--orange);font-weight:700;font-size:13px;}
+.pbar{height:7px;background:var(--border);border-radius:4px;overflow:hidden;}
+.pfill{height:100%;background:linear-gradient(90deg,var(--orange2),var(--orange));border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1);box-shadow:0 0 6px rgba(234,88,12,.3);}
+
+/* STATS */
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.sbox{background:var(--bg);border:1px solid var(--border2);border-radius:6px;padding:9px 7px;text-align:center;}
-.sval{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:#f0f6fc;}
+.sbox{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:9px 7px;text-align:center;box-shadow:var(--shadow);}
+.sval{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;color:var(--text);}
 .slbl2{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* ITINERÁRIO */
 .stops{display:flex;flex-direction:column;}
 .stop{display:flex;align-items:flex-start;gap:9px;padding:7px 0;position:relative;}
 .stop:not(:last-child)::after{content:'';position:absolute;left:10px;top:26px;width:2px;height:calc(100% - 7px);background:var(--border2);}
 .dot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0;z-index:1;font-family:'Barlow Condensed',sans-serif;}
-.do{background:#1f6feb;color:#fff;}
-.dok{background:var(--green-br);color:#fff;}
-.dp{background:var(--border2);color:var(--muted);border:2px dashed #484f58;}
-.dd{background:#da3633;color:#fff;}
+.do{background:var(--blue);color:#fff;}
+.dok{background:var(--green);color:#fff;}
+.dp{background:var(--border2);color:var(--muted);border:2px dashed #94a3b8;}
+.dd{background:var(--red);color:#fff;}
 .sinfo{flex:1;}
 .sname{font-size:12px;font-weight:500;color:var(--text);}
-.stime{font-size:10px;color:var(--muted);margin-top:1px;}
 .sbadge{display:inline-block;margin-top:2px;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;}
-.bok{background:var(--green-bg);color:var(--green);}
-.bpend{background:var(--border);color:var(--muted);}
-.bnext{background:#2a1f00;color:var(--orange);border:1px solid var(--orange);}
-#map{flex:1;background:var(--bg);min-height:0;}
-.leaflet-popup-content-wrapper{background:var(--surface)!important;border:1px solid var(--border2)!important;border-radius:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.6)!important;color:var(--text)!important;}
+.bok{background:var(--green-bg);color:var(--green);border:1px solid var(--green-br);}
+.bpend{background:var(--bg);color:var(--muted);border:1px solid var(--border2);}
+.bnext{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-br);}
+
+/* MODO FROTA — lista de veículos na sidebar */
+.frota-count{font-size:13px;color:var(--muted);margin-bottom:10px;}
+.frota-count span{font-weight:700;color:var(--blue);font-size:16px;}
+.vitem{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--bg);border:1px solid var(--border2);margin-bottom:6px;box-shadow:var(--shadow);}
+.vitem-dot{width:10px;height:10px;border-radius:50%;background:var(--orange);flex-shrink:0;box-shadow:0 0 0 3px var(--orange-bg);}
+.vitem-info{flex:1;}
+.vitem-placa{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:800;color:var(--text);letter-spacing:1px;}
+.vitem-loc{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+
+/* MAP */
+#map{flex:1;background:var(--bg);}
+
+/* POPUP */
+.leaflet-popup-content-wrapper{background:var(--surface)!important;border:1px solid var(--border2)!important;border-radius:10px!important;box-shadow:var(--shadow-md)!important;color:var(--text)!important;}
 .leaflet-popup-tip{background:var(--surface)!important;}
-.leaflet-popup-content{margin:11px 13px!important;font-family:'Barlow',sans-serif;}
-.pt{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;color:#f0f6fc;margin-bottom:3px;}
-.ps{font-size:11px;color:var(--muted);}
-.ptag{display:inline-block;margin-top:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;}
-.tgo{background:var(--blue-bg);color:var(--blue);}
-.tgp{background:var(--green-bg);color:var(--green);}
-.tgd{background:var(--red-bg);color:var(--red);}
-.tgv{background:#2a1f00;color:var(--orange);}
-html{height:100vh!important;}body{height:100vh!important;}
+.leaflet-popup-content{margin:12px 14px!important;font-family:'Barlow',sans-serif;}
+.pt{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px;}
+.ps{font-size:11px;color:var(--muted);margin-top:2px;}
+.ptag{display:inline-block;margin-top:6px;font-size:10px;font-weight:600;padding:2px 9px;border-radius:10px;}
+.tgo{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-br);}
+.tgp{background:var(--green-bg);color:var(--green);border:1px solid var(--green-br);}
+.tgd{background:var(--red-bg);color:var(--red);border:1px solid var(--red-br);}
+.tgv{background:var(--orange-bg);color:var(--orange);border:1px solid var(--orange-br);}
 </style>
 </head>
 <body>
 
-<script>
-document.documentElement.style.height = window.innerHeight + 'px';
-document.body.style.height = window.innerHeight + 'px';
-window.addEventListener('resize', function(){
-  document.documentElement.style.height = window.innerHeight + 'px';
-  document.body.style.height = window.innerHeight + 'px';
-});
-</script>  
 <div class="header">
   <div class="hicon">🚛</div>
   <div>
     <div class="htitle">FLEET TRACKER</div>
-    <div class="hsub">Roteamento por rodovias · OpenStreetMap + OSRM</div>
+    <div class="hsub" id="headerSub">Roteamento por rodovias · OpenStreetMap + OSRM</div>
   </div>
-  <div class="blive">● AO VIVO</div>
+  <div id="headerBadge" class="blive">● AO VIVO</div>
 </div>
 
 <div class="main">
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar"></div>
+  <div id="map"></div>
+</div>
 
+<script>
+const p = new URLSearchParams(window.location.search);
+
+// Detecta modo: se tem 'frota' na URL = modo geral, se tem 'placa' = modo rota
+const modoFrota = p.has('frota') && p.get('frota') === '1';
+
+// ── MAPA BASE ─────────────────────────────────────────────────
+const map = L.map('map', {zoomControl:true}).setView([-15.78, -47.93], 5);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution:'© OpenStreetMap © CARTO', subdomains:'abcd', maxZoom:19
+}).addTo(map);
+
+// ── ÍCONES ────────────────────────────────────────────────────
+function mkIcon(bg, txt, sz=24, border='#fff') {
+  return L.divIcon({
+    html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};border:2.5px solid ${border};display:flex;align-items:center;justify-content:center;font-size:${sz*.38}px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.2);">${txt}</div>`,
+    className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], popupAnchor:[0,-(sz/2+4)]
+  });
+}
+function mkTruck(small=false) {
+  const sz = small ? 32 : 40;
+  return L.divIcon({
+    html:`<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:#ea580c;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:${sz*.45}px;box-shadow:0 0 0 4px rgba(234,88,12,.2),0 2px 8px rgba(0,0,0,.2);">🚛</div>`,
+    className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], popupAnchor:[0,-sz/2-4]
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// MODO FROTA — mostra todos os veículos em operação
+// ══════════════════════════════════════════════════════════════
+if (modoFrota) {
+  document.getElementById('headerSub').textContent = 'Visão geral da frota · Veículos em operação';
+  document.getElementById('headerBadge').className = 'bfrota';
+  document.getElementById('headerBadge').textContent = '🗺 FROTA GERAL';
+
+  // Lê veículos do JSON compacto passado via parâmetro
+  let veiculos = [];
+  try {
+    veiculos = JSON.parse(decodeURIComponent(p.get('veiculos') || '[]'));
+  } catch(e) { veiculos = []; }
+
+  // Sidebar com lista
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = `
+    <div class="sec">
+      <div class="slabel">Veículos em Operação</div>
+      <div class="frota-count"><span>${veiculos.length}</span> veículos ativos</div>
+      <div id="listaVeiculos"></div>
+    </div>`;
+
+  const lista = document.getElementById('listaVeiculos');
+  const bounds = [];
+
+  veiculos.forEach(v => {
+    if (!v.lat || !v.lng) return;
+    bounds.push([v.lat, v.lng]);
+
+    // Marcador no mapa
+    L.marker([v.lat, v.lng], {icon: mkTruck(true), zIndexOffset:100})
+     .addTo(map)
+     .bindPopup(`
+       <div class="pt">🚛 ${v.placa}</div>
+       <div class="ps">Motorista: ${v.motorista || 'N/D'}</div>
+       <div class="ps">Rota: ${v.origem || '?'} → ${v.destino || '?'}</div>
+       <span class="ptag tgv">Em Operação</span>`);
+
+    // Item na sidebar
+    lista.innerHTML += `
+      <div class="vitem">
+        <div class="vitem-dot"></div>
+        <div class="vitem-info">
+          <div class="vitem-placa">${v.placa}</div>
+          <div class="vitem-loc">${v.origem || '?'} → ${v.destino || '?'}</div>
+        </div>
+      </div>`;
+  });
+
+  if (bounds.length > 0)
+    map.fitBounds(L.latLngBounds(bounds).pad(0.15));
+
+// ══════════════════════════════════════════════════════════════
+// MODO ROTA — mostra rota de um veículo específico
+// ══════════════════════════════════════════════════════════════
+} else {
+  const veiculo = {
+    lat:       parseFloat(p.get('latVeic')  || -15.78),
+    lng:       parseFloat(p.get('lonVeic')  || -47.93),
+    placa:     p.get('placa')     || 'N/D',
+    motorista: p.get('motorista') || 'N/D',
+    vel:       p.get('vel')       || '--'
+  };
+
+  const todasParadas = [
+    { nome:p.get('origem'),  lat:parseFloat(p.get('latOrig')||0), lng:parseFloat(p.get('lonOrig')||0), tipo:'origem',  ok:true },
+    { nome:p.get('base1'),   lat:parseFloat(p.get('latB1')  ||0), lng:parseFloat(p.get('lonB1')  ||0), tipo:'parada',  ok:p.get('okB1')==='true' },
+    { nome:p.get('base2'),   lat:parseFloat(p.get('latB2')  ||0), lng:parseFloat(p.get('lonB2')  ||0), tipo:'parada',  ok:p.get('okB2')==='true' },
+    { nome:p.get('base3'),   lat:parseFloat(p.get('latB3')  ||0), lng:parseFloat(p.get('lonB3')  ||0), tipo:'parada',  ok:p.get('okB3')==='true' },
+    { nome:p.get('base4'),   lat:parseFloat(p.get('latB4')  ||0), lng:parseFloat(p.get('lonB4')  ||0), tipo:'parada',  ok:p.get('okB4')==='true' },
+    { nome:p.get('destino'), lat:parseFloat(p.get('latDest')||0), lng:parseFloat(p.get('lonDest')||0), tipo:'destino', ok:false },
+  ].filter(x => x.nome && x.nome.trim()!=='' && x.lat!==0 && x.lng!==0);
+
+  // Sidebar
+  const orig = todasParadas[0]?.nome || '?';
+  const dest = todasParadas[todasParadas.length-1]?.nome || '?';
+  const concluidas = todasParadas.filter(x=>x.ok).length;
+  const total = todasParadas.length;
+  const proximaIdx = todasParadas.findIndex(x=>!x.ok);
+
+  let stopsHtml = '';
+  todasParadas.forEach((stop,i) => {
+    const isProx = i===proximaIdx;
+    const dc = stop.tipo==='origem'?'do':stop.tipo==='destino'?'dd':stop.ok?'dok':'dp';
+    const dl = stop.tipo==='origem'?'O':stop.tipo==='destino'?'D':String(i);
+    const badge = stop.ok ? '<span class="sbadge bok">✓ Concluído</span>'
+                : isProx  ? '<span class="sbadge bnext">▶ Próxima</span>'
+                :            '<span class="sbadge bpend">Pendente</span>';
+    stopsHtml += `<div class="stop">
+      <div class="dot ${dc}">${dl}</div>
+      <div class="sinfo"><div class="sname">${stop.nome}</div>${badge}</div>
+    </div>`;
+  });
+
+  document.getElementById('sidebar').innerHTML = `
     <div class="sec">
       <div class="slabel">Veículo</div>
       <div class="vcard">
-        <div class="vplate" id="sidePlaca">---</div>
-        <div class="vdriver" id="sideMotorista">👤 ---</div>
+        <div class="vplate">${veiculo.placa}</div>
+        <div class="vdriver">👤 ${veiculo.motorista}</div>
         <div class="vstatus">● Em trânsito</div>
         <div class="lbar"><div class="lfill" id="loadBar"></div></div>
-        <div class="ltxt" id="loadTxt">Calculando rota pelas rodovias…</div>
+        <div class="ltxt" id="loadTxt">Calculando rota…</div>
       </div>
     </div>
-
     <div class="sec">
-      <div class="slabel">Progresso da Viagem</div>
-      <div class="ph">
-        <span id="sideRota">--- → ---</span>
-        <span class="ppct" id="sidePct">—</span>
-      </div>
+      <div class="slabel">Progresso</div>
+      <div class="ph"><span>${orig} → ${dest}</span><span class="ppct" id="sidePct">—</span></div>
       <div class="pbar"><div class="pfill" id="progFill" style="width:0%"></div></div>
     </div>
-
     <div class="sec">
       <div class="slabel">Resumo</div>
       <div class="sgrid">
         <div class="sbox"><div class="sval" id="statETA">…</div><div class="slbl2">ETA Chegada</div></div>
         <div class="sbox"><div class="sval" id="statRest">…</div><div class="slbl2">Tempo Restante</div></div>
-        <div class="sbox"><div class="sval" id="statParadas">…</div><div class="slbl2">Paradas</div></div>
+        <div class="sbox"><div class="sval">${concluidas}/${total}</div><div class="slbl2">Paradas</div></div>
         <div class="sbox"><div class="sval" id="statDist">…</div><div class="slbl2">Dist. Total</div></div>
       </div>
     </div>
-
     <div class="sec">
       <div class="slabel">Itinerário</div>
-      <div class="stops" id="stopList"></div>
-    </div>
-
-  </div>
-
-  <div id="map"></div>
-</div>
-
-<script>
-// ── PARÂMETROS DA URL (injetados pelo Power BI via DAX) ───────
-const p = new URLSearchParams(window.location.search);
-
-const veiculo = {
-  lat:       parseFloat(p.get('latVeic')  || -15.78),
-  lng:       parseFloat(p.get('lonVeic')  || -47.93),
-  placa:     p.get('placa')     || 'N/D',
-  motorista: p.get('motorista') || 'N/D',
-  vel:       p.get('vel')       || '--'
-};
-
-const todasParadas = [
-  { nome: p.get('origem'),  lat: parseFloat(p.get('latOrig')||0), lng: parseFloat(p.get('lonOrig')||0), tipo:'origem',  ok: true },
-  { nome: p.get('base1'),   lat: parseFloat(p.get('latB1')  ||0), lng: parseFloat(p.get('lonB1')  ||0), tipo:'parada',  ok: p.get('okB1')==='true' },
-  { nome: p.get('base2'),   lat: parseFloat(p.get('latB2')  ||0), lng: parseFloat(p.get('lonB2')  ||0), tipo:'parada',  ok: p.get('okB2')==='true' },
-  { nome: p.get('base3'),   lat: parseFloat(p.get('latB3')  ||0), lng: parseFloat(p.get('lonB3')  ||0), tipo:'parada',  ok: p.get('okB3')==='true' },
-  { nome: p.get('base4'),   lat: parseFloat(p.get('latB4')  ||0), lng: parseFloat(p.get('lonB4')  ||0), tipo:'parada',  ok: p.get('okB4')==='true' },
-  { nome: p.get('destino'), lat: parseFloat(p.get('latDest')||0), lng: parseFloat(p.get('lonDest')||0), tipo:'destino', ok: false },
-].filter(x => x.nome && x.nome.trim() !== '' && x.lat !== 0 && x.lng !== 0);
-
-// ── SIDEBAR ───────────────────────────────────────────────────
-document.getElementById('sidePlaca').textContent     = veiculo.placa;
-document.getElementById('sideMotorista').textContent = '👤 ' + veiculo.motorista;
-
-const orig = todasParadas[0]                       ? todasParadas[0].nome                       : '?';
-const dest = todasParadas[todasParadas.length - 1] ? todasParadas[todasParadas.length - 1].nome : '?';
-document.getElementById('sideRota').textContent = orig + ' → ' + dest;
-
-const concluidas  = todasParadas.filter(x => x.ok).length;
-const total       = todasParadas.length;
-const proximaIdx  = todasParadas.findIndex(x => !x.ok);
-document.getElementById('statParadas').textContent = concluidas + '/' + total;
-
-// Monta itinerário dinamicamente
-const stopList = document.getElementById('stopList');
-todasParadas.forEach((stop, i) => {
-  const isProxima  = (i === proximaIdx);
-  const dotClass   = stop.tipo === 'origem'  ? 'do'
-                   : stop.tipo === 'destino' ? 'dd'
-                   : stop.ok                 ? 'dok' : 'dp';
-  const dotLabel   = stop.tipo === 'origem'  ? 'O'
-                   : stop.tipo === 'destino' ? 'D' : String(i);
-  const badgeHtml  = stop.ok      ? '<span class="sbadge bok">✓ Concluído</span>'
-                   : isProxima    ? '<span class="sbadge bnext">▶ Próxima parada</span>'
-                   :                '<span class="sbadge bpend">Pendente</span>';
-  stopList.innerHTML += `
-    <div class="stop">
-      <div class="dot ${dotClass}">${dotLabel}</div>
-      <div class="sinfo">
-        <div class="sname">${stop.nome}</div>
-        ${badgeHtml}
-      </div>
+      <div class="stops">${stopsHtml}</div>
     </div>`;
-});
 
-// ── MAPA ──────────────────────────────────────────────────────
-const map = L.map('map', {zoomControl: true}).setView([veiculo.lat, veiculo.lng], 6);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© OpenStreetMap © CARTO', subdomains: 'abcd', maxZoom: 19
-}).addTo(map);
-
-function mkIcon(bg, txt, sz=26) {
-  return L.divIcon({
-    html: `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${bg};border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:${sz*.38}px;font-weight:800;color:#fff;font-family:'Barlow Condensed',sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.5);">${txt}</div>`,
-    className:'', iconSize:[sz,sz], iconAnchor:[sz/2,sz/2], popupAnchor:[0,-(sz/2+4)]
+  // Marcadores
+  const corTipo = {origem:'#2563eb', destino:'#dc2626'};
+  todasParadas.forEach((stop,i) => {
+    const cor = stop.ok?(corTipo[stop.tipo]||'#16a34a'):(stop.tipo==='destino'?'#dc2626':'#94a3b8');
+    const lbl = stop.tipo==='origem'?'O':stop.tipo==='destino'?'D':String(i);
+    const tagCls = stop.tipo==='origem'?'tgo':stop.tipo==='destino'?'tgd':'tgp';
+    const tagNm  = stop.tipo==='origem'?'Origem':stop.tipo==='destino'?'Destino':'Parada';
+    L.marker([stop.lat,stop.lng],{icon:mkIcon(cor,lbl)})
+     .addTo(map)
+     .bindPopup(`<div class="pt">${stop.nome}</div><span class="ptag ${tagCls}">${tagNm}</span>`);
   });
-}
-function mkTruck() {
-  return L.divIcon({
-    html: `<div style="width:40px;height:40px;border-radius:50%;background:#f97316;border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:19px;box-shadow:0 0 0 6px rgba(249,115,22,.22),0 2px 12px rgba(0,0,0,.6);">🚛</div>`,
-    className:'', iconSize:[40,40], iconAnchor:[20,20], popupAnchor:[0,-24]
-  });
-}
 
-const corTipo = {origem:'#1f6feb', destino:'#da3633'};
-const tagCls  = {origem:'tgo', parada:'tgp', destino:'tgd'};
-const tagNome = {origem:'Origem', parada:'Parada', destino:'Destino'};
-
-todasParadas.forEach((stop, i) => {
-  const cor = stop.ok ? (corTipo[stop.tipo] || '#2ea043') : (stop.tipo === 'destino' ? '#da3633' : '#484f58');
-  const lbl = stop.tipo === 'origem' ? 'O' : stop.tipo === 'destino' ? 'D' : String(i);
-  L.marker([stop.lat, stop.lng], {icon: mkIcon(cor, lbl)})
+  L.marker([veiculo.lat,veiculo.lng],{icon:mkTruck(),zIndexOffset:1000})
    .addTo(map)
-   .bindPopup(`<div class="pt">${stop.nome}</div>
-     <span class="ptag ${tagCls[stop.tipo]}">${tagNome[stop.tipo]}</span>`);
-});
+   .bindPopup(`<div class="pt">🚛 ${veiculo.placa}</div>
+     <div class="ps">Motorista: ${veiculo.motorista}</div>
+     <div class="ps">Velocidade: ${veiculo.vel}</div>
+     <span class="ptag tgv">Posição Atual</span>`)
+   .openPopup();
 
-L.marker([veiculo.lat, veiculo.lng], {icon: mkTruck(), zIndexOffset: 1000})
- .addTo(map)
- .bindPopup(`<div class="pt">🚛 ${veiculo.placa}</div>
-   <div class="ps">Motorista: ${veiculo.motorista}</div>
-   <div class="ps">Velocidade: ${veiculo.vel}</div>
-   <span class="ptag tgv">Posição Atual</span>`)
- .openPopup();
+  const allCoords = todasParadas.map(s=>[s.lat,s.lng]).concat([[veiculo.lat,veiculo.lng]]);
+  if(allCoords.length>1) map.fitBounds(L.latLngBounds(allCoords).pad(0.1));
 
-const allCoords = todasParadas.map(s => [s.lat, s.lng]).concat([[veiculo.lat, veiculo.lng]]);
-if (allCoords.length > 1) map.fitBounds(L.latLngBounds(allCoords).pad(0.1));
+  // OSRM
+  const rotaCoords = todasParadas.map(s=>`${s.lng},${s.lat}`);
+  const insIdx = proximaIdx>0?proximaIdx:todasParadas.length;
+  rotaCoords.splice(insIdx,0,`${veiculo.lng},${veiculo.lat}`);
+  const osrmUrl=`https://router.project-osrm.org/route/v1/driving/${rotaCoords.join(';')}?overview=full&geometries=geojson`;
 
-// ── ROTEAMENTO OSRM ───────────────────────────────────────────
-const rotaCoords = todasParadas.map(s => `${s.lng},${s.lat}`);
-const insIdx = proximaIdx > 0 ? proximaIdx : todasParadas.length;
-rotaCoords.splice(insIdx, 0, `${veiculo.lng},${veiculo.lat}`);
+  let lp=0;
+  const li=setInterval(()=>{lp=Math.min(lp+4,88);document.getElementById('loadBar').style.width=lp+'%';},100);
 
-const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${rotaCoords.join(';')}?overview=full&geometries=geojson`;
-
-let loadPct = 0;
-const loadInt = setInterval(() => {
-  loadPct = Math.min(loadPct + 4, 88);
-  document.getElementById('loadBar').style.width = loadPct + '%';
-}, 100);
-
-fetch(osrmUrl)
-  .then(r => r.json())
-  .then(data => {
-    clearInterval(loadInt);
-    document.getElementById('loadBar').style.width = '100%';
-    document.getElementById('loadTxt').textContent = '✓ Rota carregada';
-    document.getElementById('loadTxt').style.color = '#3fb950';
-
-    if (!data.routes || !data.routes[0]) return;
-
-    const route    = data.routes[0];
-    const geometry = route.geometry.coordinates;
-    const distKm   = (route.distance / 1000).toFixed(0);
-    const durSec   = route.duration;
-
-    let minD = Infinity, splitIdx = 0;
-    geometry.forEach(([lng, lat], i) => {
-      const d = Math.hypot(lng - veiculo.lng, lat - veiculo.lat);
-      if (d < minD) { minD = d; splitIdx = i; }
-    });
-
-    const percorrido = geometry.slice(0, splitIdx + 1).map(([lng, lat]) => [lat, lng]);
-    const restante   = geometry.slice(splitIdx).map(([lng, lat]) => [lat, lng]);
-
-    L.polyline(percorrido, {color:'#f97316', weight:5, opacity:.95, lineCap:'round'}).addTo(map);
-    L.polyline(restante,   {color:'#484f58', weight:5, opacity:.8,  dashArray:'10 8', lineCap:'round'}).addTo(map);
-
-    function pLen(pts) {
-      let d = 0;
-      for (let i = 1; i < pts.length; i++)
-        d += Math.hypot(pts[i][0]-pts[i-1][0], pts[i][1]-pts[i-1][1]);
-      return d;
-    }
-
-    const lPerc = pLen(percorrido), lRest = pLen(restante);
-    const pct   = Math.round(lPerc / (lPerc + lRest) * 100);
-    const dRest = Math.round(durSec * (1 - pct / 100));
-    const hR    = Math.floor(dRest / 3600);
-    const mR    = Math.floor((dRest % 3600) / 60);
-    const eta   = new Date(Date.now() + dRest * 1000)
-                    .toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-
-    document.getElementById('sidePct').textContent  = pct + '%';
-    document.getElementById('progFill').style.width = pct + '%';
-    document.getElementById('statETA').textContent  = eta;
-    document.getElementById('statRest').textContent = hR + 'h' + String(mR).padStart(2, '0');
-    document.getElementById('statDist').textContent = distKm + ' km';
-
-    map.fitBounds(L.latLngBounds(geometry.map(([lng, lat]) => [lat, lng])).pad(0.08));
-  })
-  .catch(() => {
-    clearInterval(loadInt);
-    document.getElementById('loadTxt').textContent = '⚠ Rota em linha reta';
-    document.getElementById('loadTxt').style.color = '#f97316';
-    document.getElementById('loadBar').style.width = '100%';
-    const pts = todasParadas.map(s => [s.lat, s.lng]);
-    L.polyline([...pts.slice(0, insIdx), [veiculo.lat, veiculo.lng]], {color:'#f97316', weight:4}).addTo(map);
-    L.polyline([[veiculo.lat, veiculo.lng], ...pts.slice(insIdx)],    {color:'#484f58', weight:4, dashArray:'8 8'}).addTo(map);
-    document.getElementById('sidePct').textContent  = (concluidas * Math.round(100/total)) + '%';
-    document.getElementById('progFill').style.width = (concluidas * Math.round(100/total)) + '%';
+  fetch(osrmUrl).then(r=>r.json()).then(data=>{
+    clearInterval(li);
+    document.getElementById('loadBar').style.width='100%';
+    document.getElementById('loadTxt').textContent='✓ Rota carregada';
+    document.getElementById('loadTxt').style.color='#16a34a';
+    if(!data.routes||!data.routes[0])return;
+    const route=data.routes[0], geo=route.geometry.coordinates;
+    const distKm=(route.distance/1000).toFixed(0), durSec=route.duration;
+    let minD=Infinity,si=0;
+    geo.forEach(([lng,lat],i)=>{const d=Math.hypot(lng-veiculo.lng,lat-veiculo.lat);if(d<minD){minD=d;si=i;}});
+    const perc=geo.slice(0,si+1).map(([lng,lat])=>[lat,lng]);
+    const rest=geo.slice(si).map(([lng,lat])=>[lat,lng]);
+    L.polyline(perc,{color:'#ea580c',weight:5,opacity:.9,lineCap:'round'}).addTo(map);
+    L.polyline(rest,{color:'#94a3b8',weight:5,opacity:.7,dashArray:'10 8',lineCap:'round'}).addTo(map);
+    function pl(pts){let d=0;for(let i=1;i<pts.length;i++)d+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);return d;}
+    const lp2=pl(perc),lr=pl(rest),pct=Math.round(lp2/(lp2+lr)*100);
+    const dr=Math.round(durSec*(1-pct/100)),hr=Math.floor(dr/3600),mr=Math.floor((dr%3600)/60);
+    const eta=new Date(Date.now()+dr*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('sidePct').textContent=pct+'%';
+    document.getElementById('progFill').style.width=pct+'%';
+    document.getElementById('statETA').textContent=eta;
+    document.getElementById('statRest').textContent=hr+'h'+String(mr).padStart(2,'0');
+    document.getElementById('statDist').textContent=distKm+' km';
+    map.fitBounds(L.latLngBounds(geo.map(([lng,lat])=>[lat,lng])).pad(0.08));
+  }).catch(()=>{
+    clearInterval(li);
+    document.getElementById('loadTxt').textContent='⚠ Rota em linha reta';
+    document.getElementById('loadTxt').style.color='#ea580c';
+    document.getElementById('loadBar').style.width='100%';
+    const pts=todasParadas.map(s=>[s.lat,s.lng]);
+    L.polyline([...pts.slice(0,insIdx),[veiculo.lat,veiculo.lng]],{color:'#ea580c',weight:4}).addTo(map);
+    L.polyline([[veiculo.lat,veiculo.lng],...pts.slice(insIdx)],{color:'#94a3b8',weight:4,dashArray:'8 8'}).addTo(map);
   });
+}
 </script>
 </body>
 </html>
