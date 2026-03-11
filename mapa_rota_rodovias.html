@@ -248,8 +248,8 @@
     <div class="sec">
       <div class="sec-label">Veículo</div>
       <div class="vcard">
-        <div class="vplate">ABC-1D23</div>
-        <div class="vdriver">👤 Carlos Mendes</div>
+        <div class="vplate" id="sidePlaca">...</div>
+        <div class="vdriver" id="sideMotorista">👤 ...</div>
         <div class="vstatus">● Em trânsito</div>
         <div class="loading-bar"><div class="loading-fill" id="loadBar"></div></div>
         <div class="loading-text" id="loadText">Calculando rota pelas rodovias…</div>
@@ -339,19 +339,35 @@
 </div>
 
 <script>
-// ── DADOS ──────────────────────────────────────────────────────
-const paradas = [
-  { nome:"São Paulo",      lat:-23.5505, lng:-46.6333, tipo:"origem",  hora:"08:00", ok:true  },
-  { nome:"Campinas",       lat:-22.9056, lng:-47.0608, tipo:"parada",  hora:"09:30", ok:true  },
-  { nome:"Limeira",        lat:-22.5638, lng:-47.4012, tipo:"parada",  hora:"10:20", ok:true  },
-  { nome:"São Carlos",     lat:-22.0154, lng:-47.8910, tipo:"parada",  hora:"12:15", ok:false },
-  { nome:"Ribeirão Preto", lat:-21.1767, lng:-47.8208, tipo:"destino", hora:"14:30", ok:false },
+// ── DADOS VIA PARÂMETROS URL (injetados pelo Power BI) ────────
+const params = new URLSearchParams(window.location.search);
+
+const todasParadas = [
+  { nome: params.get('origem')  || 'Origem',  lat: parseFloat(params.get('latOrig') || -23.5505), lng: parseFloat(params.get('lonOrig') || -46.6333), tipo:'origem',  hora:'--:--', ok:true  },
+  { nome: params.get('base1')   || '',        lat: parseFloat(params.get('latB1')   || 0),         lng: parseFloat(params.get('lonB1')   || 0),         tipo:'parada',  hora:'--:--', ok: params.get('okB1')==='true' },
+  { nome: params.get('base2')   || '',        lat: parseFloat(params.get('latB2')   || 0),         lng: parseFloat(params.get('lonB2')   || 0),         tipo:'parada',  hora:'--:--', ok: params.get('okB2')==='true' },
+  { nome: params.get('base3')   || '',        lat: parseFloat(params.get('latB3')   || 0),         lng: parseFloat(params.get('lonB3')   || 0),         tipo:'parada',  hora:'--:--', ok: params.get('okB3')==='true' },
+  { nome: params.get('base4')   || '',        lat: parseFloat(params.get('latB4')   || 0),         lng: parseFloat(params.get('lonB4')   || 0),         tipo:'parada',  hora:'--:--', ok: params.get('okB4')==='true' },
+  { nome: params.get('destino') || 'Destino', lat: parseFloat(params.get('latDest') || -21.1767),  lng: parseFloat(params.get('lonDest') || -47.8208),  tipo:'destino', hora:'--:--', ok:false },
 ];
+const paradas = todasParadas.filter(p => p.nome !== '' && p.lat !== 0 && p.lng !== 0);
 
 const veiculo = {
-  lat: -22.3100, lng: -47.6500,
-  placa: "ABC-1D23", motorista: "Carlos Mendes", velocidade: "87 km/h"
+  lat:        parseFloat(params.get('latVeic')  || -22.3100),
+  lng:        parseFloat(params.get('lonVeic')  || -47.6500),
+  placa:      params.get('placa')      || 'N/D',
+  motorista:  params.get('motorista')  || 'N/D',
+  velocidade: params.get('vel')        || '--'
 };
+
+// ── ATUALIZA SIDEBAR COM DADOS REAIS ──────────────────────────
+document.getElementById('sidePlaca').textContent     = veiculo.placa;
+document.getElementById('sideMotorista').textContent = '👤 ' + veiculo.motorista;
+if(document.getElementById('sideRota')) {
+  const orig = paradas[0] ? paradas[0].nome : '?';
+  const dest = paradas[paradas.length-1] ? paradas[paradas.length-1].nome : '?';
+  document.getElementById('sideRota').textContent = orig + ' → ' + dest;
+}
 
 // ── MAPA ───────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true })
