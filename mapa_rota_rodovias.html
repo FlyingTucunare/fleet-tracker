@@ -64,10 +64,19 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);disp
 .tgp{background:var(--green-bg);color:var(--green);}
 .tgd{background:var(--red-bg);color:var(--red);}
 .tgv{background:#2a1f00;color:var(--orange);}
+html{height:100vh!important;}body{height:100vh!important;}
 </style>
 </head>
 <body>
 
+<script>
+document.documentElement.style.height = window.innerHeight + 'px';
+document.body.style.height = window.innerHeight + 'px';
+window.addEventListener('resize', function(){
+  document.documentElement.style.height = window.innerHeight + 'px';
+  document.body.style.height = window.innerHeight + 'px';
+});
+</script>  
 <div class="header">
   <div class="hicon">🚛</div>
   <div>
