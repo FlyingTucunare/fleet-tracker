@@ -154,10 +154,20 @@ if (modoFrota) {
   document.getElementById('headerBadge').textContent = '🗺 FROTA GERAL';
 
   // Lê veículos do JSON compacto passado via parâmetro
-  let veiculos = [];
-  try {
-    veiculos = JSON.parse(decodeURIComponent(p.get('veiculos') || '[]'));
-  } catch(e) { veiculos = []; }
+let veiculos = [];
+try {
+  const raw = p.get('v') || '';
+  if (raw) {
+    veiculos = raw.split('|').map(item => {
+      const parts = item.split(',');
+      return {
+        placa: parts[0],
+        lat:   parseFloat(parts[1]),
+        lng:   parseFloat(parts[2])
+      };
+    }).filter(v => v.placa && !isNaN(v.lat) && !isNaN(v.lng));
+  }
+} catch(e) { veiculos = []; }
 
   // Sidebar com lista
   const sb = document.getElementById('sidebar');
