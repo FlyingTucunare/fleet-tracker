@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR" style="height:100%;width:100%;margin:0;padding:0;">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
@@ -9,16 +9,16 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@300;400;500;600&display=swap');
 :root{--bg:#0d1117;--surface:#161b22;--border:#21262d;--border2:#30363d;--text:#e6edf3;--muted:#8b949e;--orange:#f97316;--orange2:#ea580c;--green:#3fb950;--green-bg:#1a3a1a;--green-br:#2ea043;--blue:#79b8ff;--blue-bg:#1f3a6e;--red:#ff7b7b;--red-bg:#3d1a1a;}
-html,body{margin:0;padding:0;overflow:hidden;width:100%;height:100%;}
-*{box-sizing:border-box;}
-body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;flex-direction:column;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{height:100%;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100%;overflow:hidden;}
 .header{background:linear-gradient(90deg,#0d1117,#161b22);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .hicon{width:34px;height:34px;background:linear-gradient(135deg,var(--orange),var(--orange2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 10px rgba(249,115,22,.3);}
 .htitle{font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:800;letter-spacing:1.5px;color:#f0f6fc;}
 .hsub{font-size:10px;color:var(--muted);margin-top:1px;}
 .blive{margin-left:auto;background:var(--green-bg);border:1px solid var(--green-br);color:var(--green);font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(46,160,67,.4);}50%{box-shadow:0 0 0 5px rgba(46,160,67,0);}}
-.main{display:flex;flex:1;overflow:hidden;min-height:0;}
+.main{display:flex;flex:1;overflow:hidden;min-height:0;height:0;}
 .sidebar{width:260px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;}
 .sidebar::-webkit-scrollbar{width:3px;}.sidebar::-webkit-scrollbar-thumb{background:var(--border2);}
 .sec{padding:12px 14px;border-bottom:1px solid var(--border);}
@@ -53,7 +53,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);posi
 .bok{background:var(--green-bg);color:var(--green);}
 .bpend{background:var(--border);color:var(--muted);}
 .bnext{background:#2a1f00;color:var(--orange);border:1px solid var(--orange);}
-#map{flex:1;background:var(--bg);}
+#map{flex:1;background:var(--bg);min-height:0;}
 .leaflet-popup-content-wrapper{background:var(--surface)!important;border:1px solid var(--border2)!important;border-radius:8px!important;box-shadow:0 8px 24px rgba(0,0,0,.6)!important;color:var(--text)!important;}
 .leaflet-popup-tip{background:var(--surface)!important;}
 .leaflet-popup-content{margin:11px 13px!important;font-family:'Barlow',sans-serif;}
@@ -77,7 +77,7 @@ body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);posi
   <div class="blive">● AO VIVO</div>
 </div>
 
-<div class="main"<div class="main" style="position:fixed;top:45px;left:0;right:0;bottom:0;display:flex;">
+<div class="main">
   <div class="sidebar">
 
     <div class="sec">
