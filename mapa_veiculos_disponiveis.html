@@ -124,7 +124,27 @@ try {
   }
 } catch(e) { veiculos = []; }
 
-document.getElementById('sbCount').textContent = veiculos.length;
+// Veículos sem posição GPS
+let semPosicao = [];
+try {
+  const rawS = p.get('s') || '';
+  if (rawS) {
+    semPosicao = rawS.split('||')
+      .filter(item => item && item.includes('|'))
+      .map(item => {
+        const parts = item.split('|');
+        return {
+          placa:   decodeURIComponent(parts[0] || ''),
+          modelo:  decodeURIComponent(parts[1] || ''),
+          tipo:    decodeURIComponent(parts[2] || ''),
+          ultimaAt:decodeURIComponent(parts[3] || '')
+        };
+      })
+      .filter(v => v.placa);
+  }
+} catch(e) { semPosicao = []; }
+
+document.getElementById('sbCount').textContent = veiculos.length + semPosicao.length;
 
 // Ícone veículo disponível
 function makeIcon(color) {
@@ -190,6 +210,31 @@ veiculos.forEach((v, i) => {
 if (veiculos.length > 0) {
   const bounds = L.latLngBounds(veiculos.map(v => [v.lat, v.lng]));
   map.fitBounds(bounds.pad(0.1));
+}
+
+// Adiciona separador e cards sem GPS na sidebar
+if (semPosicao.length > 0) {
+  const sep = document.createElement('div');
+  sep.style.cssText = 'padding:8px 12px 4px;font-size:10px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;border-top:1px solid #f1f5f9;margin-top:4px;';
+  sep.textContent = '⚠ Sem posição GPS (' + semPosicao.length + ')';
+  document.getElementById('sbList').appendChild(sep);
+
+  semPosicao.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'vcard';
+    card.style.opacity = '0.7';
+    card.innerHTML = `
+      <div class="vcard-placa">${v.placa}</div>
+      <div class="vcard-modelo">${v.modelo || '—'} · ${v.tipo || '—'}</div>
+      ${v.ultimaAt ? `<div class="vcard-local">📅 ${v.ultimaAt}</div>` : ''}
+      <div class="vcard-badges">
+        <span class="badge badge-tipo">${v.tipo || 'Veículo'}</span>
+        <span class="badge" style="background:#fef9c3;color:#854d0e;">⭐ Nunca programado</span>
+        <span class="badge" style="background:#f1f5f9;color:#64748b;">📡 Sem GPS</span>
+      </div>
+    `;
+    document.getElementById('sbList').appendChild(card);
+  });
 }
 </script>
 </body>
