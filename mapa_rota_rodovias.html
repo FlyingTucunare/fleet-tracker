@@ -123,6 +123,7 @@ const p = new URLSearchParams(window.location.search);
 
 // Detecta modo: se tem 'frota' na URL = modo geral, se tem 'placa' = modo rota
 const modoFrota = p.has('frota') && p.get('frota') === '1';
+const prazoViagem = p.get('prazo') || '';
 
 // ── MAPA BASE ─────────────────────────────────────────────────
 const map = L.map('map', {zoomControl:true}).setView([-15.78, -47.93], 5);
@@ -154,24 +155,35 @@ if (modoFrota) {
   document.getElementById('headerBadge').textContent = '🗺 FROTA GERAL';
 
   // Lê veículos do JSON compacto passado via parâmetro
-  let veiculos = [];
-  try {
-    const raw = p.get('v') || '';
-    if (raw) {
-      veiculos = raw.split('--')
-        .filter(item => item && item.split('__').length === 3)
-        .map(item => {
-          const parts = item.split('__');
-          return {
-            placa: parts[0],
-            lat:   parseFloat(parts[1].replace('n','-')),
-            lng:   parseFloat(parts[2].replace('n','-'))
-          };
-        })
-        .filter(v => v.placa && v.placa.length >= 7 && !isNaN(v.lat) && !isNaN(v.lng) && v.lat !== 0 && v.lng !== 0);
-    }
-  } catch(e) { veiculos = []; }
-
+let veiculos = [];
+try {
+  const raw = p.get('v') || '';
+  if (raw) {
+    veiculos = raw
+      .split('||')
+      .filter(item => item && item.includes('|'))
+      .map(item => {
+        const parts = item.split('|');
+        return {
+          placa: decodeURIComponent(parts[0] || ''),
+          motorista: decodeURIComponent(parts[1] || ''),
+          origem: decodeURIComponent(parts[2] || ''),
+          destino: decodeURIComponent(parts[3] || ''),
+          lat: parseFloat(parts[4] || ''),
+          lng: parseFloat(parts[5] || '')
+        };
+      })
+      .filter(v =>
+        v.placa &&
+        !isNaN(v.lat) &&
+        !isNaN(v.lng) &&
+        v.lat !== 0 &&
+        v.lng !== 0
+      );
+  }
+} catch (e) {
+  veiculos = [];
+}
   // Sidebar com lista
   const sb = document.getElementById('sidebar');
   sb.innerHTML = `
@@ -276,6 +288,8 @@ if (modoFrota) {
         <div class="sbox"><div class="sval" id="statRest">…</div><div class="slbl2">Tempo Restante</div></div>
         <div class="sbox"><div class="sval">${concluidas}/${total}</div><div class="slbl2">Paradas</div></div>
         <div class="sbox"><div class="sval" id="statDist">…</div><div class="slbl2">Dist. Total</div></div>
+        <div class="sbox" style="grid-column:span 2"><div class="sval" style="font-size:13px;" id="statPrazo">…</div><div class="slbl2">Prazo de Entrega</div></div>
+        <div class="sbox" style="grid-column:span 2"><div class="sval" id="statAtraso" style="font-size:13px;">…</div><div class="slbl2">Status de Pontualidade</div></div>
       </div>
     </div>
     <div class="sec">
@@ -338,6 +352,26 @@ if (modoFrota) {
     document.getElementById('statETA').textContent=eta;
     document.getElementById('statRest').textContent=hr+'h'+String(mr).padStart(2,'0');
     document.getElementById('statDist').textContent=distKm+' km';
+
+    // Prazo e atraso
+    if (prazoViagem) {
+      const prazoDate = new Date(decodeURIComponent(prazoViagem));
+      const etaDate = new Date(Date.now() + dr * 1000);
+      const prazoStr = prazoDate.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+      document.getElementById('statPrazo').textContent = prazoStr;
+      const diffMin = Math.round((etaDate - prazoDate) / 60000);
+      if (diffMin <= 0) {
+        document.getElementById('statAtraso').textContent = 'No prazo';
+        document.getElementById('statAtraso').style.color = '#16a34a';
+      } else {
+        const hAt = Math.floor(diffMin/60), mAt = diffMin%60;
+        document.getElementById('statAtraso').textContent = '+' + hAt + 'h' + String(mAt).padStart(2,'0') + ' atrasado';
+        document.getElementById('statAtraso').style.color = '#dc2626';
+      }
+    } else {
+      document.getElementById('statPrazo').textContent = 'N/D';
+      document.getElementById('statAtraso').textContent = '—';
+    }
     map.fitBounds(L.latLngBounds(geo.map(([lng,lat])=>[lat,lng])).pad(0.08));
   }).catch(()=>{
     clearInterval(li);
