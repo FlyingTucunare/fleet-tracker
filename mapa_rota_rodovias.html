@@ -124,6 +124,7 @@ const p = new URLSearchParams(window.location.search);
 // Detecta modo: se tem 'frota' na URL = modo geral, se tem 'placa' = modo rota
 const modoFrota = p.has('frota') && p.get('frota') === '1';
 const prazoViagem = p.get('prazo') || '';
+const inicioOpParam = p.get('inicioOp') || '';
 
 // ── MAPA BASE ─────────────────────────────────────────────────
 const map = L.map('map', {zoomControl:true}).setView([-15.78, -47.93], 5);
@@ -284,12 +285,12 @@ try {
     <div class="sec">
       <div class="slabel">Resumo</div>
       <div class="sgrid">
-        <div class="sbox"><div class="sval" id="statETA">…</div><div class="slbl2">ETA Chegada</div></div>
-        <div class="sbox"><div class="sval" id="statRest">…</div><div class="slbl2">Tempo Restante</div></div>
-        <div class="sbox"><div class="sval">${concluidas}/${total}</div><div class="slbl2">Paradas</div></div>
-        <div class="sbox"><div class="sval" id="statDist">…</div><div class="slbl2">Dist. Total</div></div>
+        <div class="sbox" style="grid-column:span 2"><div class="sval" style="font-size:13px;" id="statInicio">…</div><div class="slbl2">Início Operação</div></div>
+        <div class="sbox" style="grid-column:span 2"><div class="sval" style="font-size:13px;" id="statETA">…</div><div class="slbl2">ETA Chegada</div></div>
         <div class="sbox" style="grid-column:span 2"><div class="sval" style="font-size:13px;" id="statPrazo">…</div><div class="slbl2">Prazo de Entrega</div></div>
-        <div class="sbox" style="grid-column:span 2"><div class="sval" id="statAtraso" style="font-size:13px;">…</div><div class="slbl2">Status de Pontualidade</div></div>
+        <div class="sbox" style="grid-column:span 2"><div class="sval" id="statAtraso" style="font-size:13px;">…</div><div class="slbl2">Tempo até o Prazo</div></div>
+        <div class="sbox"><div class="sval" id="statKmRest">…</div><div class="slbl2">KM Restantes</div></div>
+        <div class="sbox"><div class="sval">${concluidas}/${total}</div><div class="slbl2">Paradas</div></div>
       </div>
     </div>
     <div class="sec">
@@ -349,23 +350,39 @@ try {
     const eta=new Date(Date.now()+dr*1000).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('sidePct').textContent=pct+'%';
     document.getElementById('progFill').style.width=pct+'%';
-    document.getElementById('statETA').textContent=eta;
-    document.getElementById('statRest').textContent=hr+'h'+String(mr).padStart(2,'0');
-    document.getElementById('statDist').textContent=distKm+' km';
+    // ETA no formato DD/MM HH:MM
+    const etaDate = new Date(Date.now() + dr * 1000);
+    const etaStr = etaDate.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    document.getElementById('statETA').textContent = etaStr;
 
-    // Prazo e atraso
+    // KM restantes
+    const kmRestantes = Math.round(distKm * (1 - pct/100));
+    document.getElementById('statKmRest').textContent = kmRestantes + ' km';
+
+    // Início Operação
+    if (inicioOpParam) {
+      const inicioDate = new Date(decodeURIComponent(inicioOpParam));
+      const inicioStr = inicioDate.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+      document.getElementById('statInicio').textContent = inicioStr;
+    } else {
+      document.getElementById('statInicio').textContent = 'N/D';
+    }
+
+    // Prazo e Tempo até o Prazo
     if (prazoViagem) {
       const prazoDate = new Date(decodeURIComponent(prazoViagem));
-      const etaDate = new Date(Date.now() + dr * 1000);
       const prazoStr = prazoDate.toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
       document.getElementById('statPrazo').textContent = prazoStr;
-      const diffMin = Math.round((etaDate - prazoDate) / 60000);
-      if (diffMin <= 0) {
-        document.getElementById('statAtraso').textContent = 'No prazo';
-        document.getElementById('statAtraso').style.color = '#16a34a';
+      // Tempo até o prazo a partir de AGORA
+      const agoraDate = new Date();
+      const diffPrazoMin = Math.round((prazoDate - agoraDate) / 60000);
+      if (diffPrazoMin >= 0) {
+        const hP = Math.floor(diffPrazoMin/60), mP = diffPrazoMin%60;
+        document.getElementById('statAtraso').textContent = hP + 'h' + String(mP).padStart(2,'0') + ' restantes';
+        document.getElementById('statAtraso').style.color = diffPrazoMin < 120 ? '#ea580c' : '#16a34a';
       } else {
-        const hAt = Math.floor(diffMin/60), mAt = diffMin%60;
-        document.getElementById('statAtraso').textContent = '+' + hAt + 'h' + String(mAt).padStart(2,'0') + ' atrasado';
+        const hP = Math.floor(Math.abs(diffPrazoMin)/60), mP = Math.abs(diffPrazoMin)%60;
+        document.getElementById('statAtraso').textContent = '+' + hP + 'h' + String(mP).padStart(2,'0') + ' atrasado';
         document.getElementById('statAtraso').style.color = '#dc2626';
       }
     } else {
