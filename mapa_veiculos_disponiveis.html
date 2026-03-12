@@ -115,7 +115,9 @@ try {
           manutencao:decodeURIComponent(parts[3] || ''),
           lat:       parseFloat(parts[4] || ''),
           lng:       parseFloat(parts[5] || ''),
-          local:     decodeURIComponent(parts[6] || '')
+          local:     decodeURIComponent(parts[6] || ''),
+          status:    decodeURIComponent(parts[7] || ''),
+          ultimaAt:  decodeURIComponent(parts[8] || '')
         };
       })
       .filter(v => v.placa && !isNaN(v.lat) && !isNaN(v.lng) && v.lat !== 0 && v.lng !== 0);
@@ -144,6 +146,7 @@ veiculos.forEach((v, i) => {
   const emManut = v.manutencao && v.manutencao.toLowerCase() !== 'não' && v.manutencao !== '' && v.manutencao !== 'false';
   const cor = emManut ? '#f59e0b' : '#16a34a';
 
+  const nuncaProg = v.status && v.status.toLowerCase().includes('nunca');
   const marker = L.marker([v.lat, v.lng], {icon: makeIcon(cor)})
     .addTo(map)
     .bindPopup(`
