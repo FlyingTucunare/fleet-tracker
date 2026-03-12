@@ -154,23 +154,24 @@ if (modoFrota) {
   document.getElementById('headerBadge').textContent = '🗺 FROTA GERAL';
 
   // Lê veículos do JSON compacto passado via parâmetro
-  let veiculos = [];
-  try {
-    const raw = p.get('v') || '';
-    if (raw) {
-      veiculos = raw.split('Z')
-        .filter(item => item && item.includes('X'))
-        .map(item => {
-          const parts = item.split('X');
-          return {
-            placa: parts[0],
-            lat:   parseFloat((parts[1]||'').replace('n','-')),
-            lng:   parseFloat((parts[2]||'').replace('n','-'))
-          };
-        })
-        .filter(v => v.placa && v.placa.length > 3 && !isNaN(v.lat) && !isNaN(v.lng) && v.lat !== 0 && v.lng !== 0);
-    }
-  } catch(e) { veiculos = []; }
+let veiculos = [];
+try {
+  const raw = p.get('v') || '';
+  if (raw) {
+    veiculos = raw.split('9')
+      .filter(item => item && item.includes('1'))
+      .map(item => {
+        const i1 = item.indexOf('1');
+        const i2 = item.indexOf('2', i1);
+        return {
+          placa: item.substring(0, i1),
+          lat:   parseFloat(item.substring(i1+1, i2).replace('n','-')),
+          lng:   parseFloat(item.substring(i2+1).replace('n','-'))
+        };
+      })
+      .filter(v => v.placa && v.placa.length > 3 && !isNaN(v.lat) && !isNaN(v.lng) && v.lat !== 0);
+  }
+} catch(e) { veiculos = []; }
 
   // Sidebar com lista
   const sb = document.getElementById('sidebar');
