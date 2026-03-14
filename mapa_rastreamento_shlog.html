@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SHLOG — Rastreamento de Frota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --gold:      #F5A623;
+    --gold-light:#FFD27A;
+    --gold-dim:  #B87A14;
+    --bg:        #0D0F14;
+    --surface:   #151820;
+    --surface2:  #1C2030;
+    --surface3:  #242840;
+    --border:    rgba(245,166,35,0.18);
+    --border2:   rgba(255,255,255,0.07);
+    --text:      #E8EBF0;
+    --text-sub:  #7A8199;
+    --text-dim:  #4A5168;
+    --green:     #2ECC71;
+    --green-bg:  rgba(46,204,113,0.12);
+    --gray:      #8A94AA;
+    --gray-bg:   rgba(138,148,170,0.12);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow:hidden; }
+  body {
+    font-family:'Inter', sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    height:52px;
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    padding:0 16px;
+    gap:14px;
+    flex-shrink:0;
+    position:relative;
+    z-index:1000;
+  }
+  .logo-mark {
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  /* SVG inline logo simplified — arrow + text */
+  .logo-arrow {
+    width:28px;
+    height:20px;
+  }
+  .logo-text {
+    font-family:'Rajdhani', sans-serif;
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:#fff;
+  }
+  .logo-sub {
+    font-size:9px;
+    letter-spacing:3px;
+    color:var(--gold);
+    font-weight:600;
+    text-transform:uppercase;
+    margin-top:-4px;
+  }
+  .header-divider {
+    width:1px;
+    height:28px;
+    background:var(--border);
+  }
+  .header-title {
+    font-family:'Rajdhani', sans-serif;
+    font-size:14px;
+    font-weight:600;
+    color:var(--text-sub);
+    letter-spacing:1px;
+    text-transform:uppercase;
+  }
+  .header-stats {
+    margin-left:auto;
+    display:flex;
+    gap:16px;
+    align-items:center;
+  }
+  .hstat {
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+  }
+  .hstat-dot {
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    flex-shrink:0;
+  }
+  .hstat-dot.moving { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .hstat-dot.stopped { background:var(--gray); }
+  .hstat-num {
+    font-family:'Rajdhani', sans-serif;
+    font-size:16px;
+    font-weight:700;
+    color:var(--text);
+  }
+  .hstat-label { color:var(--text-sub); }
+  .pulse-badge {
+    padding:3px 10px;
+    background:rgba(245,166,35,0.12);
+    border:1px solid var(--border);
+    border-radius:20px;
+    font-size:10px;
+    font-weight:600;
+    color:var(--gold);
+    letter-spacing:.8px;
+    text-transform:uppercase;
+  }
+  .pulse-dot {
+    display:inline-block;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:var(--gold);
+    margin-right:5px;
+    animation:pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100%{opacity:1;transform:scale(1)}
+    50%{opacity:.4;transform:scale(.8)}
+  }
+
+  /* ── LAYOUT ── */
+  .main {
+    display:flex;
+    flex:1;
+    overflow:hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width:270px;
+    flex-shrink:0;
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .sb-top {
+    padding:12px 14px 10px;
+    border-bottom:1px solid var(--border2);
+  }
+  .sb-search {
+    width:100%;
+    background:var(--surface2);
+    border:1px solid var(--border2);
+    border-radius:6px;
+    padding:7px 10px 7px 30px;
+    color:var(--text);
+    font-size:12px;
+    outline:none;
+    transition:border-color .2s;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237A8199' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:9px center;
+  }
+  .sb-search:focus { border-color:var(--gold-dim); }
+  .sb-search::placeholder { color:var(--text-dim); }
+
+  .sb-filters {
+    display:flex;
+    gap:6px;
+    margin-top:8px;
+  }
+  .filter-btn {
+    flex:1;
+    padding:5px 0;
+    border-radius:5px;
+    border:1px solid var(--border2);
+    background:transparent;
+    color:var(--text-sub);
+    font-size:10px;
+    font-weight:600;
+    letter-spacing:.6px;
+    cursor:pointer;
+    transition:all .15s;
+  }
+  .filter-btn.active-all { border-color:var(--gold-dim); background:rgba(245,166,35,0.1); color:var(--gold); }
+  .filter-btn.active-mov { border-color:var(--green); background:var(--green-bg); color:var(--green); }
+  .filter-btn.active-stop { border-color:#555; background:var(--gray-bg); color:var(--gray); }
+
+  .sb-section-label {
+    padding:8px 14px 4px;
+    font-size:9px;
+    font-weight:700;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:1.2px;
+  }
+
+  .sb-list {
+    flex:1;
+    overflow-y:auto;
+    padding:4px 8px 8px;
+  }
+  .sb-list::-webkit-scrollbar { width:4px; }
+  .sb-list::-webkit-scrollbar-track { background:transparent; }
+  .sb-list::-webkit-scrollbar-thumb { background:var(--surface3); border-radius:2px; }
+
+  .vcard {
+    background:var(--surface2);
+    border:1px solid var(--border2);
+    border-radius:8px;
+    padding:9px 11px;
+    margin-bottom:5px;
+    cursor:pointer;
+    transition:all .15s;
+    position:relative;
+    overflow:hidden;
+  }
+  .vcard::before {
+    content:'';
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width:3px;
+    border-radius:3px 0 0 3px;
+  }
+  .vcard.moving::before { background:var(--green); }
+  .vcard.stopped::before { background:var(--text-dim); }
+  .vcard:hover { border-color:var(--border); background:var(--surface3); }
+  .vcard.active { border-color:var(--gold-dim); background:rgba(245,166,35,0.07); }
+  .vcard.active::before { background:var(--gold); }
+
+  .vcard-top { display:flex; align-items:center; justify-content:space-between; }
+  .vcard-placa {
+    font-family:'Rajdhani', sans-serif;
+    font-size:15px;
+    font-weight:700;
+    color:var(--text);
+    letter-spacing:.8px;
+  }
+  .vstatus {
+    font-size:9px;
+    font-weight:700;
+    padding:2px 7px;
+    border-radius:10px;
+    letter-spacing:.5px;
+  }
+  .vstatus.moving { background:var(--green-bg); color:var(--green); }
+  .vstatus.stopped { background:var(--gray-bg); color:var(--gray); }
+
+  .vcard-driver {
+    font-size:11px;
+    color:var(--text-sub);
+    margin-top:3px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .vcard-bottom {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:5px;
+  }
+  .vcard-local {
+    font-size:10px;
+    color:var(--text-dim);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    max-width:160px;
+  }
+  .vcard-vel {
+    font-family:'Rajdhani', sans-serif;
+    font-size:13px;
+    font-weight:600;
+    color:var(--gold);
+  }
+
+  /* ── MAP ── */
+  #map {
+    flex:1;
+    background:var(--bg);
+  }
+
+  /* Leaflet overrides */
+  .leaflet-container { background:#0D0F14 !important; }
+  .leaflet-tile { filter:brightness(0.7) saturate(0.5) hue-rotate(200deg); }
+  .leaflet-control-zoom {
+    border:1px solid var(--border) !important;
+    background:var(--surface) !important;
+  }
+  .leaflet-control-zoom a {
+    background:var(--surface) !important;
+    color:var(--text-sub) !important;
+    border-bottom:1px solid var(--border2) !important;
+  }
+  .leaflet-control-zoom a:hover {
+    background:var(--surface3) !important;
+    color:var(--gold) !important;
+  }
+  .leaflet-popup-content-wrapper {
+    background:var(--surface) !important;
+    border:1px solid var(--border) !important;
+    border-radius:10px !important;
+    box-shadow:0 8px 32px rgba(0,0,0,.6) !important;
+    padding:0 !important;
+  }
+  .leaflet-popup-tip {
+    background:var(--border) !important;
+  }
+  .leaflet-popup-content { margin:0 !important; width:auto !important; }
+  .leaflet-popup-close-button {
+    color:var(--text-sub) !important;
+    top:8px !important; right:8px !important;
+    font-size:16px !important;
+  }
+  .leaflet-popup-close-button:hover { color:var(--gold) !important; }
+
+  /* ── POPUP ── */
+  .popup-card {
+    min-width:240px;
+    max-width:280px;
+    padding:14px 16px;
+  }
+  .popup-header {
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .popup-placa {
+    font-family:'Rajdhani', sans-serif;
+    font-size:20px;
+    font-weight:700;
+    color:var(--text);
+    letter-spacing:1px;
+    line-height:1;
+  }
+  .popup-driver {
+    font-size:11px;
+    color:var(--text-sub);
+    margin-top:3px;
+  }
+  .popup-badge {
+    font-size:10px;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:10px;
+    white-space:nowrap;
+  }
+  .popup-badge.moving { background:var(--green-bg); color:var(--green); border:1px solid rgba(46,204,113,.3); }
+  .popup-badge.stopped { background:var(--gray-bg); color:var(--gray); border:1px solid rgba(138,148,170,.3); }
+
+  .popup-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .popup-stat {
+    background:var(--surface2);
+    border:1px solid var(--border2);
+    border-radius:6px;
+    padding:8px 10px;
+  }
+  .popup-stat-label {
+    font-size:9px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    font-weight:600;
+  }
+  .popup-stat-value {
+    font-family:'Rajdhani', sans-serif;
+    font-size:16px;
+    font-weight:700;
+    color:var(--text);
+    margin-top:2px;
+  }
+  .popup-stat-value.highlight { color:var(--gold); }
+
+  .popup-row {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:11px;
+    padding:4px 0;
+    border-top:1px solid var(--border2);
+  }
+  .popup-row-label { color:var(--text-sub); }
+  .popup-row-value { color:var(--text); font-weight:500; text-align:right; max-width:150px; }
+
+  .popup-macro {
+    margin-top:8px;
+    padding:7px 10px;
+    background:rgba(245,166,35,0.07);
+    border:1px solid var(--border);
+    border-radius:6px;
+    font-size:10px;
+    color:var(--gold-light);
+  }
+  .popup-macro-label {
+    font-size:9px;
+    color:var(--gold-dim);
+    text-transform:uppercase;
+    letter-spacing:.8px;
+    font-weight:700;
+    margin-bottom:3px;
+  }
+
+  /* ── CUSTOM MARKERS ── */
+  .custom-marker {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    position:relative;
+  }
+  .marker-body {
+    width:36px;
+    height:36px;
+    border-radius:50% 50% 50% 0;
+    transform:rotate(-45deg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.5);
+  }
+  .marker-body.moving {
+    background:var(--green);
+    border:2px solid rgba(255,255,255,.3);
+    box-shadow:0 0 12px rgba(46,204,113,.5), 0 4px 14px rgba(0,0,0,.4);
+  }
+  .marker-body.stopped {
+    background:#3A4055;
+    border:2px solid rgba(255,255,255,.15);
+  }
+  .marker-icon {
+    transform:rotate(45deg);
+    font-size:14px;
+  }
+  .marker-label {
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:3px;
+    padding:2px 5px;
+    font-family:'Rajdhani', sans-serif;
+    font-size:10px;
+    font-weight:700;
+    color:var(--text);
+    margin-top:2px;
+    white-space:nowrap;
+    box-shadow:0 2px 6px rgba(0,0,0,.4);
+  }
+
+  /* ── NO DATA ── */
+  .no-data {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    height:100%;
+    color:var(--text-dim);
+    gap:12px;
+  }
+  .no-data-icon { font-size:40px; opacity:.3; }
+  .no-data-text { font-size:13px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo-mark">
+    <svg class="logo-arrow" viewBox="0 0 56 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Stylized arrow sweep matching SHLOG logo -->
+      <path d="M2 30 Q20 8 54 6" stroke="#F5A623" stroke-width="4" stroke-linecap="round" fill="none"/>
+      <polygon points="54,2 54,14 46,8" fill="#F5A623"/>
+    </svg>
+    <div>
+      <div class="logo-text">SHLOG</div>
+      <div class="logo-sub">Transportes</div>
+    </div>
+  </div>
+  <div class="header-divider"></div>
+  <div class="header-title">Rastreamento de Frota</div>
+  <div class="header-stats">
+    <div class="hstat">
+      <span class="hstat-dot moving"></span>
+      <span class="hstat-num" id="cntMoving">0</span>
+      <span class="hstat-label">em movimento</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-dot stopped"></span>
+      <span class="hstat-num" id="cntStopped">0</span>
+      <span class="hstat-label">parados</span>
+    </div>
+    <div class="pulse-badge"><span class="pulse-dot"></span>Ao vivo</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-top">
+      <input class="sb-search" id="searchInput" type="text" placeholder="Buscar placa ou motorista…" oninput="filterCards()"/>
+      <div class="sb-filters">
+        <button class="filter-btn active-all" id="btnAll"    onclick="setFilter('all')">Todos</button>
+        <button class="filter-btn"            id="btnMov"    onclick="setFilter('moving')">▶ Movimento</button>
+        <button class="filter-btn"            id="btnStop"   onclick="setFilter('stopped')">◼ Parados</button>
+      </div>
+    </div>
+    <div class="sb-list" id="sbList"></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA PARSING
+// ─────────────────────────────────────────────
+// URL param format (from DAX):
+// ?v=placa|motorista|vel|em_movimento|lat|lon|municipio|uf|ultima_macro|rpm|odometro|bateria|tempo_parado|tempo_em_movimento|data_hora||placa|...
+// &s=placa|motorista|data_hora||...
+
+const params   = new URLSearchParams(window.location.search);
+const rawV     = params.get('v') || '';
+const rawS     = params.get('s') || '';
+
+function dec(s){ return decodeURIComponent(s || '').trim(); }
+
+function parseVeiculos(raw){
+  if (!raw) return [];
+  return raw.split('||').map(seg => {
+    const p = seg.split('|');
+    return {
+      placa:          dec(p[0]),
+      motorista:      dec(p[1]),
+      velocidade:     parseFloat(p[2]) || 0,
+      em_movimento:   dec(p[3]) === '1' || dec(p[3]).toLowerCase() === 'true',
+      lat:            parseFloat(p[4]),
+      lon:            parseFloat(p[5]),
+      municipio:      dec(p[6]),
+      uf:             dec(p[7]),
+      ultima_macro:   dec(p[8]),
+      rpm:            dec(p[9]),
+      odometro:       dec(p[10]),
+      bateria:        dec(p[11]),
+      tempo_parado:   dec(p[12]),
+      tempo_em_mov:   dec(p[13]),
+      data_hora:      dec(p[14]),
+    };
+  }).filter(v => v.placa && !isNaN(v.lat) && !isNaN(v.lon));
+}
+
+function parseSemPos(raw){
+  if (!raw) return [];
+  return raw.split('||').map(seg => {
+    const p = seg.split('|');
+    return {
+      placa:      dec(p[0]),
+      motorista:  dec(p[1]),
+      data_hora:  dec(p[2]),
+      sem_gps: true
+    };
+  }).filter(v => v.placa);
+}
+
+const veiculos  = parseVeiculos(rawV);
+const semPos    = parseSemPos(rawS);
+const allVeics  = veiculos; // only mapped ones get markers
+
+// ─────────────────────────────────────────────
+// MAP INIT
+// ─────────────────────────────────────────────
+const map = L.map('map', {
+  zoomControl: true,
+  attributionControl: false,
+  preferCanvas: true
+}).setView([-15.7801, -47.9292], 5);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OSM'
+}).addTo(map);
+
+// Dark overlay tile for the filtered look
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+// ─────────────────────────────────────────────
+// MARKERS
+// ─────────────────────────────────────────────
+const markers = {};
+
+function makeIcon(v){
+  const cls  = v.em_movimento ? 'moving' : 'stopped';
+  const icon = v.em_movimento ? '▶' : '◼';
+  const html = `
+    <div class="custom-marker">
+      <div class="marker-body ${cls}">
+        <span class="marker-icon">${icon}</span>
+      </div>
+      <div class="marker-label">${v.placa}</div>
+    </div>`;
+  return L.divIcon({
+    html,
+    className:'',
+    iconSize:[60,54],
+    iconAnchor:[30,52],
+    popupAnchor:[0,-52]
+  });
+}
+
+function fmt(val, suffix=''){
+  if(!val && val!==0) return '—';
+  return val + suffix;
+}
+
+function makePopup(v){
+  const cls   = v.em_movimento ? 'moving' : 'stopped';
+  const label = v.em_movimento ? '▶ Em movimento' : '◼ Parado';
+  const loc   = [v.municipio, v.uf].filter(Boolean).join(' / ') || '—';
+
+  return `<div class="popup-card">
+    <div class="popup-header">
+      <div>
+        <div class="popup-placa">🚛 ${v.placa}</div>
+        <div class="popup-driver">${v.motorista || 'Motorista não informado'}</div>
+      </div>
+      <span class="popup-badge ${cls}">${label}</span>
+    </div>
+    <div class="popup-grid">
+      <div class="popup-stat">
+        <div class="popup-stat-label">Velocidade</div>
+        <div class="popup-stat-value highlight">${fmt(v.velocidade, ' km/h')}</div>
+      </div>
+      <div class="popup-stat">
+        <div class="popup-stat-label">RPM</div>
+        <div class="popup-stat-value">${fmt(v.rpm)}</div>
+      </div>
+      <div class="popup-stat">
+        <div class="popup-stat-label">Odômetro</div>
+        <div class="popup-stat-value">${fmt(v.odometro, ' km')}</div>
+      </div>
+      <div class="popup-stat">
+        <div class="popup-stat-label">Bateria</div>
+        <div class="popup-stat-value">${fmt(v.bateria, ' V')}</div>
+      </div>
+    </div>
+    <div class="popup-row">
+      <span class="popup-row-label">Localização</span>
+      <span class="popup-row-value">${loc}</span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-row-label">Tempo parado</span>
+      <span class="popup-row-value">${fmt(v.tempo_parado)}</span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-row-label">Tempo em mov.</span>
+      <span class="popup-row-value">${fmt(v.tempo_em_mov)}</span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-row-label">Atualizado em</span>
+      <span class="popup-row-value">${fmt(v.data_hora)}</span>
+    </div>
+    ${v.ultima_macro ? `<div class="popup-macro"><div class="popup-macro-label">Última macro</div>${v.ultima_macro}</div>` : ''}
+  </div>`;
+}
+
+veiculos.forEach(v => {
+  const mk = L.marker([v.lat, v.lon], { icon: makeIcon(v) })
+    .addTo(map)
+    .bindPopup(makePopup(v), { maxWidth:300 });
+  markers[v.placa] = { marker: mk, data: v };
+});
+
+if(veiculos.length > 0){
+  const bounds = L.latLngBounds(veiculos.map(v => [v.lat, v.lon]));
+  map.fitBounds(bounds.pad(0.12));
+}
+
+// ─────────────────────────────────────────────
+// SIDEBAR CARDS
+// ─────────────────────────────────────────────
+let activeFilter = 'all';
+let activeCard   = null;
+
+document.getElementById('cntMoving').textContent  = veiculos.filter(v => v.em_movimento).length;
+document.getElementById('cntStopped').textContent = veiculos.filter(v => !v.em_movimento).length;
+
+function buildCards(list){
+  const sbList = document.getElementById('sbList');
+  sbList.innerHTML = '';
+
+  if(list.length === 0){
+    sbList.innerHTML = `<div class="no-data"><div class="no-data-icon">📡</div><div class="no-data-text">Nenhum veículo encontrado</div></div>`;
+    return;
+  }
+
+  // Sort: moving first, then by placa
+  const sorted = [...list].sort((a,b)=>{
+    if(a.em_movimento !== b.em_movimento) return a.em_movimento ? -1 : 1;
+    return a.placa.localeCompare(b.placa);
+  });
+
+  sorted.forEach((v,i) => {
+    const cls = v.em_movimento ? 'moving' : 'stopped';
+    const stLabel = v.em_movimento ? '▶ MOV' : '◼ PARADO';
+    const loc = [v.municipio, v.uf].filter(Boolean).join(' / ') || '—';
+
+    const card = document.createElement('div');
+    card.className = `vcard ${cls}`;
+    card.dataset.placa = v.placa;
+    card.innerHTML = `
+      <div class="vcard-top">
+        <div class="vcard-placa">${v.placa}</div>
+        <span class="vstatus ${cls}">${stLabel}</span>
+      </div>
+      <div class="vcard-driver">${v.motorista || '—'}</div>
+      <div class="vcard-bottom">
+        <div class="vcard-local">${loc}</div>
+        ${v.em_movimento ? `<div class="vcard-vel">${v.velocidade} km/h</div>` : ''}
+      </div>`;
+
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.vcard').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      activeCard = v.placa;
+      map.setView([v.lat, v.lon], 14, { animate:true });
+      markers[v.placa]?.marker.openPopup();
+    });
+
+    sbList.appendChild(card);
+  });
+
+  // Sem GPS section
+  if(semPos.length > 0 && activeFilter !== 'moving'){
+    const sep = document.createElement('div');
+    sep.className = 'sb-section-label';
+    sep.style.marginTop = '8px';
+    sep.textContent = `⚠ Sem GPS (${semPos.length})`;
+    sbList.appendChild(sep);
+
+    semPos.forEach(v => {
+      const card = document.createElement('div');
+      card.className = 'vcard stopped';
+      card.style.opacity = '.55';
+      card.innerHTML = `
+        <div class="vcard-top">
+          <div class="vcard-placa">${v.placa}</div>
+          <span class="vstatus stopped">SEM GPS</span>
+        </div>
+        <div class="vcard-driver">${v.motorista || '—'}</div>
+        ${v.data_hora ? `<div class="vcard-bottom"><div class="vcard-local">📅 ${v.data_hora}</div></div>` : ''}`;
+      sbList.appendChild(card);
+    });
+  }
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  let list = veiculos;
+  if(activeFilter === 'moving')  list = list.filter(v => v.em_movimento);
+  if(activeFilter === 'stopped') list = list.filter(v => !v.em_movimento);
+  if(q) list = list.filter(v =>
+    v.placa.toLowerCase().includes(q) ||
+    (v.motorista||'').toLowerCase().includes(q)
+  );
+  return list;
+}
+
+function filterCards(){ buildCards(getFiltered()); }
+
+function setFilter(f){
+  activeFilter = f;
+  document.getElementById('btnAll').className  = 'filter-btn' + (f==='all'     ? ' active-all'  : '');
+  document.getElementById('btnMov').className  = 'filter-btn' + (f==='moving'  ? ' active-mov'  : '');
+  document.getElementById('btnStop').className = 'filter-btn' + (f==='stopped' ? ' active-stop' : '');
+  filterCards();
+}
+
+buildCards(veiculos);
+</script>
+</body>
+</html>
